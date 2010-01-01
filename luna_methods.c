@@ -68,6 +68,7 @@ bool version_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 	len = asprintf(&jsonResponse, "{\"returnValue\":true,\"version\":\"%s\"}", version);
       }
     }
+    // %%% IGNORING RETURN ALERT %%%
     pclose(fp);
   }
 
@@ -103,7 +104,6 @@ bool list_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (fp) {
     json_t *array = json_new_array();
     while ( fgets( line, sizeof line, fp)) {
-      fprintf(stderr, "line: %s", line);
       // %%% MAGIC NUMBERS ALERT %%%
       if (sscanf(line, "(%*d/%*d) %127s (start) %127c",
 		 (char*)&name, (char *)&status) == 2) {
@@ -149,32 +149,131 @@ bool list_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return returnVal;
 }
 
-bool other_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
+bool start_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
-  bool returnVal = false;
+  bool returnVal = true;
+  char line[MAXLINELEN];
+  // %%% MAGIC NUMBERS ALERT %%%
+  char name[128];
+  char status[128];
 
   LSError lserror;
   LSErrorInit(&lserror);
 
-  char *jsonArgs = 0;
+  char *jsonResponse = 0;
   int len = 0;
 
   json_t *object = LSMessageGetPayloadJSON(message);
 
-  // json_t *id = json_find_first_label(object, "id");               
-  // json_t *params = json_find_first_label(object, "params");               
+  // %%% NEEDS TO BE SANITIZED %%%
+  json_t *id = json_find_first_label(object, "id");               
 
-  if (json_tree_to_string(object, &jsonArgs)) {
-    returnVal = LSCallOneReply(lshandle, "palm://com.palm.applicationManager/launch",
-			       jsonArgs, NULL, NULL, NULL, &lserror);
-    free(jsonArgs);
+  // %%% MAGIC NUMBERS ALERT %%%
+  char command[128];
+  char format[128];
+
+  // %%% IGNORING RETURN ALERT %%%
+  sprintf((char *)&command, "/sbin/initctl start %s 2>&1", id->child->text);
+
+  json_t *response = json_new_object();
+
+  FILE *fp = popen(command, "r");
+  if (fp) {
+    while ( fgets( line, sizeof line, fp)) {
+      if (sscanf(line, "(%*d/%*d) Job not changed: %127s\n", (char *)&name) == 1) {
+	// %%% IGNORING RETURN ALERT %%%
+	json_insert_pair_into_object(response, "status", json_new_string("Job not changed"));
+      }
+      else if (sscanf(line, "(%*d/%*d) %s %127c\n", (char *)&name, (char *)&status) == 2) {
+	// %%% HACK ALERT %%%
+	*strchr(status,'\n') = 0;
+	// %%% IGNORING RETURN ALERT %%%
+	json_insert_pair_into_object(response, "status", json_new_string(status));
+      }
+    }
+    if (!pclose(fp)) {
+      // %%% IGNORING RETURN ALERT %%%
+      json_insert_pair_into_object(response, "returnValue", json_new_true());
+    }
+    else {
+      // %%% IGNORING RETURN ALERT %%%
+      json_insert_pair_into_object(response, "returnValue", json_new_false());
+    }
+    json_tree_to_string(response, &jsonResponse);
   }
 
-  if (returnVal) {
-    LSMessageReply(lshandle, message, "{\"returnValue\":true}", &lserror);
+  if (jsonResponse) {
+    LSMessageReply(lshandle, message, jsonResponse, &lserror);
+    free(jsonResponse);
   } else
     LSMessageReply(lshandle, message, "{\"returnValue\":false,\"errorCode\":-1,\"errorText\":\"Generic error\"}", &lserror);
+ 
+  json_free_value(&response);
+  LSErrorFree(&lserror);
 
+  return returnVal;
+}
+
+bool stop_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
+
+  bool returnVal = true;
+  char line[MAXLINELEN];
+  // %%% MAGIC NUMBERS ALERT %%%
+  char name[128];
+  char status[128];
+
+  LSError lserror;
+  LSErrorInit(&lserror);
+
+  char *jsonResponse = 0;
+  int len = 0;
+
+  json_t *object = LSMessageGetPayloadJSON(message);
+
+  // %%% NEEDS TO BE SANITIZED %%%
+  json_t *id = json_find_first_label(object, "id");               
+
+  // %%% MAGIC NUMBERS ALERT %%%
+  char command[128];
+  char format[128];
+
+  // %%% IGNORING RETURN ALERT %%%
+  sprintf((char *)&command, "/sbin/initctl stop %s 2>&1", id->child->text);
+
+  json_t *response = json_new_object();
+
+  FILE *fp = popen(command, "r");
+  if (fp) {
+    while ( fgets( line, sizeof line, fp)) {
+      if (sscanf(line, "(%*d/%*d) Job not changed: %127s\n", (char *)&name) == 1) {
+	// %%% IGNORING RETURN ALERT %%%
+	json_insert_pair_into_object(response, "status", json_new_string("Job not changed"));
+      }
+      else if (sscanf(line, "(%*d/%*d) %s %127c\n", (char *)&name, (char *)&status) == 2) {
+	// %%% HACK ALERT %%%
+	*strchr(status,'\n') = 0;
+	// %%% IGNORING RETURN ALERT %%%
+	json_insert_pair_into_object(response, "status", json_new_string(status));
+      }
+    }
+    if (!pclose(fp)) {
+      // %%% IGNORING RETURN ALERT %%%
+      json_insert_pair_into_object(response, "returnValue", json_new_true());
+    }
+    else {
+      // %%% IGNORING RETURN ALERT %%%
+      json_insert_pair_into_object(response, "returnValue", json_new_false());
+    }
+    json_tree_to_string(response, &jsonResponse);
+  }
+
+  if (jsonResponse) {
+    LSMessageReply(lshandle, message, jsonResponse, &lserror);
+    free(jsonResponse);
+  } else
+    LSMessageReply(lshandle, message, "{\"returnValue\":false,\"errorCode\":-1,\"errorText\":\"Generic error\"}", &lserror);
+ 
+  json_free_value(&response);
   LSErrorFree(&lserror);
 
   return returnVal;
@@ -183,8 +282,8 @@ bool other_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 LSMethod luna_methods[] = {
   { "version",	version_method },
   { "list",	list_method },
-  { "start",	dummy_method },
-  { "stop",	dummy_method },
+  { "start",	start_method },
+  { "stop",	stop_method },
   { "status",	dummy_method },
   { "jobs",	dummy_method },
   { "emit",	dummy_method },
