@@ -17,6 +17,10 @@ if [ "$IPKG_OFFLINE_ROOT" != "/var" ] ; then
   cp $IPKG_OFFLINE_ROOT/usr/sbin/${PID} /var/usr/sbin/${PID}
 fi
 
+# Install the dbus service
+rm -f /usr/share/dbus-1/system-services/${PID}.service
+cp $IPKG_OFFLINE_ROOT/usr/share/dbus-1/system-services/${PID}.service /usr/share/dbus-1/system-services/${PID}.service
+
 # Start the service
 /sbin/start ${PID}
 
