@@ -1,0 +1,23 @@
+#!/bin/sh                                                                                       
+
+PID="org.webosinternals.upstartmgr"
+
+if [ -z "$IPKG_OFFLINE_ROOT" ]; then
+  IPKG_OFFLINE_ROOT=/media/cryptofs/apps
+fi
+
+# Install the upstart script
+rm -f /etc/event.d/${PID}
+cp $IPKG_OFFLINE_ROOT/etc/event.d/${PID} /etc/event.d/${PID}
+
+# Install the service binary
+if [ "$IPKG_OFFLINE_ROOT" != "/var" ] ; then
+  rm -f /var/usr/sbin/${PID}
+  mkdir -p /var/usr/sbin
+  cp $IPKG_OFFLINE_ROOT/usr/sbin/${PID} /var/usr/sbin/${PID}
+fi
+
+# Start the service
+/sbin/start ${PID}
+
+exit 0

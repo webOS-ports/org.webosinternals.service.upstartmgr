@@ -1,0 +1,16 @@
+#!/bin/sh
+
+PID="org.webosinternals.upstartmgr"
+
+# Stop the service
+/sbin/stop ${PID}
+
+# Remove the service binary
+if [ "$IPKG_OFFLINE_ROOT" != "/var" ] ; then
+  rm -f /var/usr/sbin/${PID}
+fi
+
+# Remove the upstart script
+rm -f /etc/event.d/${PID}
+
+exit 0
