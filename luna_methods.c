@@ -25,6 +25,8 @@
 #include "luna_service.h"
 #include "luna_methods.h"
 
+#define ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-"
+
 bool dummy_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   bool returnVal = true;
@@ -165,8 +167,12 @@ bool start_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   json_t *object = LSMessageGetPayloadJSON(message);
 
-  // %%% NEEDS TO BE SANITIZED %%%
   json_t *id = json_find_first_label(object, "id");               
+  if (strspn(id->child->text, ALLOWED_CHARS) != strlen(id->child->text)) {
+    LSMessageReply(lshandle, message, "{\"returnValue\":false,\"errorCode\":-1,\"errorText\":\"Invalid id\"}", &lserror);
+    LSErrorFree(&lserror);
+    return true;
+  }
 
   // %%% MAGIC NUMBERS ALERT %%%
   char command[128];
@@ -230,8 +236,12 @@ bool stop_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   json_t *object = LSMessageGetPayloadJSON(message);
 
-  // %%% NEEDS TO BE SANITIZED %%%
   json_t *id = json_find_first_label(object, "id");               
+  if (strspn(id->child->text, ALLOWED_CHARS) != strlen(id->child->text)) {
+    LSMessageReply(lshandle, message, "{\"returnValue\":false,\"errorCode\":-1,\"errorText\":\"Invalid id\"}", &lserror);
+    LSErrorFree(&lserror);
+    return true;
+  }
 
   // %%% MAGIC NUMBERS ALERT %%%
   char command[128];
