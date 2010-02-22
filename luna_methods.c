@@ -289,6 +289,57 @@ bool stop_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return returnVal;
 }
 
+bool jps_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
+
+  bool returnVal = true;
+  char line[MAXLINELEN];
+  // %%% MAGIC NUMBERS ALERT %%%
+  char name[128];
+
+  LSError lserror;
+  LSErrorInit(&lserror);
+
+  char *jsonResponse = 0;
+  int len = 0;
+
+  json_t *response = json_new_object();
+
+  FILE *fp = popen("/usr/bin/jps", "r");
+  if (fp) {
+    json_t *array = json_new_array();
+    // Skip the first line
+    (void)fgets( line, sizeof line, fp);
+    while ( fgets( line, sizeof line, fp)) {
+      if (sscanf(line, "%*d %*d %*d %*d %*d %*d %*d %127c",
+		 (char*)&name) == 1) {
+	// %%% HACK ALERT %%%
+	*strchr(name,'\n') = 0;
+	json_t *object = json_new_object();
+	// %%% IGNORING RETURN ALERT %%%
+	json_insert_pair_into_object(object, "name", json_new_string(name));
+	json_insert_child(array, object);
+      }
+    }
+    if (!pclose(fp)) {
+      // %%% IGNORING RETURN ALERT %%%
+      json_insert_pair_into_object(response, "returnValue", json_new_true());
+      json_insert_pair_into_object(response, "threads", array);
+      json_tree_to_string(response, &jsonResponse);
+    }
+  }
+
+  if (jsonResponse) {
+    LSMessageReply(lshandle, message, jsonResponse, &lserror);
+    free(jsonResponse);
+  } else
+    LSMessageReply(lshandle, message, "{\"returnValue\":false,\"errorCode\":-1,\"errorText\":\"Generic error\"}", &lserror);
+ 
+  json_free_value(&response);
+  LSErrorFree(&lserror);
+
+  return returnVal;
+}
+
 LSMethod luna_methods[] = {
   { "version",	version_method },
   { "list",	list_method },
@@ -299,6 +350,7 @@ LSMethod luna_methods[] = {
   { "emit",	dummy_method },
   { "events",	dummy_method },
   { "respawn",	dummy_method },
+  { "jps",	jps_method },
   { 0, 0 }
 };
 
