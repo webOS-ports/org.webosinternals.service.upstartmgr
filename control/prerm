@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# Handle execution as pmPreRemove.script
+if [ -z "$IPKG_OFFLINE_ROOT" ]; then
+  IPKG_OFFLINE_ROOT=/media/cryptofs/apps
+  mount -o remount,rw /
+fi
+
 PID="org.webosinternals.upstartmgr"
 
 # Stop the service
