@@ -22,6 +22,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <json.h>
+
 #include "luna_service.h"
 #include "luna_methods.h"
 
