@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.webosinternals.upstartmgr
-Exec=@WEBOS_INSTALL_SBINDIR@/org.webosinternals.upstartmgr

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.7)
 
-project(org.webosinternals.upstartmgr C)
+project(org.webosinternals.service.upstartmgr C)
 
 include(webOS/webOS)
 webos_modules_init(1 0 0 QUALIFIER RC2)
@@ -27,8 +27,8 @@ add_definitions(-DVERSION=\"0.1.0\")
 
 file(GLOB SOURCE_FILES *.c)
 
-add_executable(org.webosinternals.upstartmgr ${SOURCE_FILES})
-target_link_libraries(org.webosinternals.upstartmgr
+add_executable(org.webosinternals.service.upstartmgr ${SOURCE_FILES})
+target_link_libraries(org.webosinternals.service.upstartmgr
     ${GLIB2_LDFLAGS} ${LUNASERVICE2_LDFLAGS} ${MJSON_LDFLAGS}
     rt pthread)
 

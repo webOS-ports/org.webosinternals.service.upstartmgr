@@ -1,0 +1,4 @@
+start on stopped finish
+
+exec @WEBOS_INSTALL_SBINDIR@/org.webosinternals.service.upstartmgr
+respawn
