@@ -68,7 +68,7 @@ bool version_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (fp) {
     while ( fgets( line, sizeof line, fp)) {
       // %%% MAGIC NUMBER ALERT %%%
-      if (sscanf(line, "(%*d/%*d) upstart %15s\n", (char*)&version) == 1) {
+      if (sscanf(line, "init (upstart %15s)\n", (char*)&version) == 1) {
 	len = asprintf(&jsonResponse, "{\"returnValue\":true,\"version\":\"%s\"}", version);
       }
     }
@@ -109,7 +109,7 @@ bool list_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
     json_t *array = json_new_array();
     while ( fgets( line, sizeof line, fp)) {
       // %%% MAGIC NUMBERS ALERT %%%
-      if (sscanf(line, "(%*d/%*d) %127s (start) %127c",
+      if (sscanf(line, "%127s (start) %127c",
 		 (char*)&name, (char *)&status) == 2) {
 	// %%% HACK ALERT %%%
 	*strchr(status,'\n') = 0;
@@ -121,7 +121,7 @@ bool list_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
 	json_insert_child(array, object);
       }
       // %%% MAGIC NUMBERS ALERT %%%
-      else if (sscanf(line, "(%*d/%*d) %127s (stop) %127c",
+      else if (sscanf(line, "%127s (stop) %127c",
 		 (char*)&name, (char *)&status) == 2) {
 	// %%% HACK ALERT %%%
 	*strchr(status,'\n') = 0;
@@ -167,7 +167,7 @@ bool start_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *jsonResponse = 0;
   int len = 0;
 
-  json_t *object = LSMessageGetPayloadJSON(message);
+  json_t *object = json_parse_document(LSMessageGetPayload(message));
 
   json_t *id = json_find_first_label(object, "id");               
   if (strspn(id->child->text, ALLOWED_CHARS) != strlen(id->child->text)) {
@@ -236,7 +236,7 @@ bool stop_method(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *jsonResponse = 0;
   int len = 0;
 
-  json_t *object = LSMessageGetPayloadJSON(message);
+  json_t *object = json_parse_document(LSMessageGetPayload(message));
 
   json_t *id = json_find_first_label(object, "id");               
   if (strspn(id->child->text, ALLOWED_CHARS) != strlen(id->child->text)) {
